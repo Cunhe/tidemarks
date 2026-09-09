@@ -8,7 +8,7 @@ compatibility_date = "2026-09-09"
 [assets]
 directory = "."
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = true
 
 # 可选：在 Dashboard 绑定同名 KV，不要把 id 写进仓库
 # [[kv_namespaces]]
