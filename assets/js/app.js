@@ -1,10 +1,12 @@
 const STORAGE_KEY = "tidemarks.v1";
 const THEME_KEY = "tidemarks.theme";
+const TOKEN_KEY = "tidemarks.token";
 const STATE = {
   data: null,
   editing: false,
   query: "",
   modal: null,
+  bound: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -31,7 +33,27 @@ function toast(msg) {
   const el = $("#toast");
   el.textContent = msg;
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 1800);
+  setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function setStatus(msg, kind = "") {
+  const el = $("#cloudStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `status-row ${kind}`.trim();
+}
+
+async function readApiError(res) {
+  const text = await res.text();
+  try {
+    const j = JSON.parse(text);
+    return j.error || text;
+  } catch {
+    if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+      return `接口没有打到 Worker（返回了网页 HTML，HTTP ${res.status}）`;
+    }
+    return text.slice(0, 180) || `HTTP ${res.status}`;
+  }
 }
 
 function loadLocal() {
@@ -57,12 +79,12 @@ async function loadSeed() {
 async function boot() {
   const theme = localStorage.getItem(THEME_KEY) || "dark";
   document.documentElement.dataset.theme = theme;
-
-  STATE.data = loadLocal() || (await loadSeed());
-  render();
+  bind();
   tick();
   setInterval(tick, 1000);
-  bind();
+  STATE.data = loadLocal() || (await loadSeed());
+  render();
+  await pingCloud();
 }
 
 function tick() {
@@ -96,17 +118,13 @@ function render() {
   $("#subtitle").textContent = STATE.data.subtitle || "海风起处，书签成岸";
   document.body.classList.toggle("editing", STATE.editing);
   $("#editBtn").textContent = STATE.editing ? "完成" : "编辑";
-
   const root = $("#cats");
   const cats = filteredCategories();
   if (!cats.length) {
     root.innerHTML = `<div class="empty">没有匹配的书签。试试别的词，或按 Enter 用搜索引擎查找。</div>`;
     return;
   }
-
-  root.innerHTML = cats
-    .map(
-      (cat) => `
+  root.innerHTML = cats.map((cat) => `
       <section class="cat" data-cat="${cat.id}">
         <div class="cat-head">
           <div class="cat-title"><span>${cat.icon || "•"}</span>${escapeHtml(cat.name)}</div>
@@ -119,8 +137,7 @@ function render() {
           </div>
         </div>
         <div class="grid">
-          ${cat.links
-            .map((link) => {
+          ${cat.links.map((link) => {
               const icon = favicon(link.url);
               const initial = escapeHtml(link.name).slice(0, 1);
               return `
@@ -132,19 +149,14 @@ function render() {
                   <div class="desc">${escapeHtml(link.desc || hostname(link.url))}</div>
                 </div>
               </a>`;
-            })
-            .join("")}
+            }).join("")}
         </div>
-      </section>`
-    )
-    .join("");
-
+      </section>`).join("");
   if (STATE.editing) {
     $$(".card").forEach((card) => {
       card.addEventListener("click", (e) => {
         e.preventDefault();
-        const id = card.dataset.id;
-        const found = findLink(id);
+        const found = findLink(card.dataset.id);
         if (found) openLinkModal(found.cat.id, found.link);
       });
     });
@@ -160,53 +172,33 @@ function findLink(id) {
 }
 
 function escapeHtml(s = "") {
-  return String(s)
-    .replaceAll("&", "&")
-    .replaceAll("<", "<")
-    .replaceAll(">", ">")
-    .replaceAll('"', """);
+  return String(s).replaceAll("&", "&").replaceAll("<", "<").replaceAll(">", ">").replaceAll('"', """);
 }
-
-function escapeAttr(s = "") {
-  return escapeHtml(s);
-}
+function escapeAttr(s = "") { return escapeHtml(s); }
 
 function bind() {
-  $("#q").addEventListener("input", (e) => {
-    STATE.query = e.target.value;
-    render();
-  });
+  if (STATE.bound) return;
+  STATE.bound = true;
+  $("#q").addEventListener("input", (e) => { STATE.query = e.target.value; render(); });
   $("#q").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const q = STATE.query.trim();
-      const visible = filteredCategories().flatMap((c) => c.links);
-      if (visible.length === 1) {
-        window.open(visible[0].url, "_blank", "noopener");
-        return;
-      }
-      if (q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, "_blank", "noopener");
-    }
+    if (e.key !== "Enter") return;
+    const q = STATE.query.trim();
+    const visible = filteredCategories().flatMap((c) => c.links);
+    if (visible.length === 1) { window.open(visible[0].url, "_blank", "noopener"); return; }
+    if (q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, "_blank", "noopener");
   });
-
   $("#themeBtn").addEventListener("click", () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
     localStorage.setItem(THEME_KEY, next);
   });
-
-  $("#editBtn").addEventListener("click", () => {
-    STATE.editing = !STATE.editing;
-    render();
-  });
-
+  $("#editBtn").addEventListener("click", () => { STATE.editing = !STATE.editing; render(); });
   $("#addCatBtn").addEventListener("click", () => {
     const name = prompt("新分类名称", "未命名");
     if (!name) return;
     STATE.data.categories.push({ id: uid("cat"), name, icon: "✦", links: [] });
-    persist();
-    render();
+    persist(); render();
   });
-
   $("#exportBtn").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(STATE.data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -216,7 +208,6 @@ function bind() {
     URL.revokeObjectURL(a.href);
     toast("已导出 JSON");
   });
-
   $("#importBtn").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", async (e) => {
     const file = e.target.files[0];
@@ -224,64 +215,46 @@ function bind() {
     try {
       const json = JSON.parse(await file.text());
       if (!json.categories) throw new Error("格式不对");
-      STATE.data = json;
-      persist();
-      render();
-      toast("导入成功");
-    } catch {
-      toast("导入失败，请检查 JSON");
-    }
+      STATE.data = json; persist(); render(); toast("导入成功");
+    } catch { toast("导入失败，请检查 JSON"); }
     e.target.value = "";
   });
-
   $("#resetBtn").addEventListener("click", async () => {
     if (!confirm("恢复为仓库默认书签？当前本地修改会覆盖。")) return;
-    STATE.data = await loadSeed();
-    persist();
-    render();
-    toast("已恢复默认");
+    STATE.data = await loadSeed(); persist(); render(); toast("已恢复默认");
   });
-
   $("#cloudPull").addEventListener("click", pullCloud);
-  $("#cloudPush").addEventListener("click", pushCloud);
-
+  $("#cloudPush").addEventListener("click", openTokenModal);
+  $("#tokenCancel").addEventListener("click", closeTokenModal);
+  $("#tokenSave").addEventListener("click", confirmPush);
+  $("#fToken").addEventListener("keydown", (e) => { if (e.key === "Enter") confirmPush(); });
   $("#cats").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
     const act = btn.dataset.act;
-    const catId = btn.dataset.cat;
-    const cat = STATE.data.categories.find((c) => c.id === catId);
+    const cat = STATE.data.categories.find((c) => c.id === btn.dataset.cat);
     if (!cat) return;
-    if (act === "add-link") openLinkModal(catId);
+    if (act === "add-link") openLinkModal(cat.id);
     if (act === "rename-cat") {
       const name = prompt("分类名称", cat.name);
       if (!name) return;
-      cat.name = name;
-      persist();
-      render();
+      cat.name = name; persist(); render();
     }
     if (act === "del-cat") {
       if (!confirm(`删除分类「${cat.name}」？`)) return;
-      STATE.data.categories = STATE.data.categories.filter((c) => c.id !== catId);
-      persist();
-      render();
+      STATE.data.categories = STATE.data.categories.filter((c) => c.id !== cat.id);
+      persist(); render();
     }
   });
-
   $("#modalCancel").addEventListener("click", closeModal);
   $("#modalSave").addEventListener("click", saveModal);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "/" && document.activeElement !== $("#q")) {
-      e.preventDefault();
-      $("#q").focus();
-    }
-    if (e.key === "Escape") closeModal();
+    if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
+    if (e.key === "Escape") { closeModal(); closeTokenModal(); }
   });
 }
 
-function persist() {
-  saveLocal(STATE.data);
-}
+function persist() { saveLocal(STATE.data); }
 
 function openLinkModal(catId, link) {
   STATE.modal = { catId, linkId: link?.id || null };
@@ -292,12 +265,7 @@ function openLinkModal(catId, link) {
   $("#modalBg").classList.add("show");
   $("#fName").focus();
 }
-
-function closeModal() {
-  $("#modalBg").classList.remove("show");
-  STATE.modal = null;
-}
-
+function closeModal() { $("#modalBg").classList.remove("show"); STATE.modal = null; }
 function saveModal() {
   const name = $("#fName").value.trim();
   let url = $("#fUrl").value.trim();
@@ -306,50 +274,71 @@ function saveModal() {
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
   const cat = STATE.data.categories.find((c) => c.id === STATE.modal.catId);
   if (!cat) return;
-  if (STATE.modal.linkId) {
-    const link = cat.links.find((l) => l.id === STATE.modal.linkId);
-    Object.assign(link, { name, url, desc });
-  } else {
-    cat.links.push({ id: uid("link"), name, url, desc });
-  }
-  persist();
-  closeModal();
-  render();
+  if (STATE.modal.linkId) Object.assign(cat.links.find((l) => l.id === STATE.modal.linkId), { name, url, desc });
+  else cat.links.push({ id: uid("link"), name, url, desc });
+  persist(); closeModal(); render();
 }
+
+async function pingCloud() {
+  try {
+    const res = await fetch("/api/health", { cache: "no-store" });
+    if (!res.ok) throw new Error(await readApiError(res));
+    const info = await res.json();
+    if (!info.kv) { setStatus("KV 未绑定。Bindings 变量名必须是 BOOKMARKS", "bad"); return info; }
+    if (!info.token) { setStatus("KV 已连接，但还没设置 ADMIN_TOKEN，暂时不能推送", "bad"); return info; }
+    setStatus(info.hasData ? "云端已就绪，KV 中有数据" : "云端已就绪，KV 还是空的，先点「云推送」", "ok");
+    return info;
+  } catch (err) {
+    setStatus(`云端检测失败：${err.message}`, "bad");
+    return null;
+  }
+}
+
+function openTokenModal() {
+  $("#fToken").value = sessionStorage.getItem(TOKEN_KEY) || "";
+  $("#tokenBg").classList.add("show");
+  $("#fToken").focus();
+}
+function closeTokenModal() { $("#tokenBg").classList.remove("show"); }
 
 async function pullCloud() {
+  setStatus("正在从 KV 拉取…");
   try {
-    const res = await fetch("/api/bookmarks");
-    if (!res.ok) throw new Error(await res.text());
+    const res = await fetch("/api/bookmarks", { cache: "no-store" });
+    if (res.status === 404) {
+      const msg = await readApiError(res);
+      setStatus(msg, "bad"); toast(msg); return;
+    }
+    if (!res.ok) throw new Error(await readApiError(res));
     const json = await res.json();
-    if (!json.categories) throw new Error("云端数据为空或格式不对");
-    STATE.data = json;
-    persist();
-    render();
+    if (!json.categories) throw new Error("云端数据格式不对，缺少 categories");
+    STATE.data = json; persist(); render();
+    setStatus("已从 Cloudflare KV 拉取", "ok");
     toast("已从 Cloudflare KV 拉取");
   } catch (err) {
-    toast("云端未配置或拉取失败");
-    console.warn(err);
+    setStatus(`拉取失败：${err.message}`, "bad");
+    toast(`拉取失败：${err.message}`);
   }
 }
 
-async function pushCloud() {
-  const token = prompt("输入 ADMIN_TOKEN（Cloudflare 环境变量）");
-  if (!token) return;
+async function confirmPush() {
+  const token = $("#fToken").value.trim();
+  if (!token) return toast("请填写 ADMIN_TOKEN");
+  sessionStorage.setItem(TOKEN_KEY, token);
+  closeTokenModal();
+  setStatus("正在推送到 KV…");
   try {
     const res = await fetch("/api/bookmarks", {
       method: "PUT",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${token}`,
-      },
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
       body: JSON.stringify(STATE.data),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await readApiError(res));
+    setStatus("已推送到 Cloudflare KV", "ok");
     toast("已推送到 Cloudflare KV");
   } catch (err) {
-    toast("推送失败，检查 Functions / KV / Token");
-    console.warn(err);
+    setStatus(`推送失败：${err.message}`, "bad");
+    toast(`推送失败：${err.message}`);
   }
 }
 
