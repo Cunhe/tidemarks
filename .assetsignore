@@ -1,0 +1,10 @@
+wrangler.toml
+src/
+functions/
+README.md
+LICENSE
+.gitignore
+.assetsignore
+.git/
+.wrangler/
+node_modules/

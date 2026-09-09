@@ -1,10 +1,16 @@
 name = "tidemarks"
+main = "src/worker.js"
 compatibility_date = "2026-09-09"
-pages_build_output_dir = "."
 
-# 本地预览时可选：npx wrangler pages dev
-# 生产环境请在 Cloudflare Dashboard 绑定同名 KV 与环境变量
+# 适配 Cloudflare 控制台的「npx wrangler deploy」
+# 不要写 pages_build_output_dir，否则会被当成 Pages 项目
 
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# 可选：在 Dashboard 绑定同名 KV，不要把 id 写进仓库
 # [[kv_namespaces]]
 # binding = "BOOKMARKS"
-# id = "替换为你的 KV namespace id"
+# id = "替换为 KV namespace id"
