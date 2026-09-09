@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "title": "潮迹 TideMarks",
+  "subtitle": "海风起处，书签成岸",
+  "updatedAt": "2026-09-09T00:00:00.000Z",
+  "categories": [
+    {
+      "id": "create",
+      "name": "创作工坊",
+      "icon": "✒️",
+      "links": [
+        { "id": "suno", "name": "Suno", "url": "https://suno.com", "desc": "AI 作曲与小样" },
+        { "id": "grok", "name": "Grok", "url": "https://grok.com", "desc": "对话、作词与图像" },
+        { "id": "midjourney", "name": "Midjourney", "url": "https://www.midjourney.com", "desc": "视觉概念" },
+        { "id": "notion", "name": "Notion", "url": "https://www.notion.so", "desc": "文稿与世界观" },
+        { "id": "github", "name": "GitHub", "url": "https://github.com", "desc": "代码与仓库" }
+      ]
+    },
+    {
+      "id": "music",
+      "name": "声音与影像",
+      "icon": "🌊",
+      "links": [
+        { "id": "youtube", "name": "YouTube", "url": "https://www.youtube.com", "desc": "参考与 MV" },
+        { "id": "bilibili", "name": "Bilibili", "url": "https://www.bilibili.com", "desc": "中文影像" },
+        { "id": "spotify", "name": "Spotify", "url": "https://open.spotify.com", "desc": "听感校准" },
+        { "id": "netease", "name": "网易云音乐", "url": "https://music.163.com", "desc": "华语语境" }
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "AI 工具",
+      "icon": "✦",
+      "links": [
+        { "id": "chatgpt", "name": "ChatGPT", "url": "https://chatgpt.com", "desc": "通用对话" },
+        { "id": "claude", "name": "Claude", "url": "https://claude.ai", "desc": "长文与结构" },
+        { "id": "gemini", "name": "Gemini", "url": "https://gemini.google.com", "desc": "多模态" },
+        { "id": "huggingface", "name": "Hugging Face", "url": "https://huggingface.co", "desc": "模型与空间" }
+      ]
+    },
+    {
+      "id": "ops",
+      "name": "部署与基建",
+      "icon": "☁️",
+      "links": [
+        { "id": "cloudflare", "name": "Cloudflare", "url": "https://dash.cloudflare.com", "desc": "Pages / Workers / KV" },
+        { "id": "cf-pages-docs", "name": "Pages 文档", "url": "https://developers.cloudflare.com/pages/", "desc": "官方指南" },
+        { "id": "wrangler", "name": "Wrangler", "url": "https://developers.cloudflare.com/workers/wrangler/", "desc": "CLI 部署" }
+      ]
+    },
+    {
+      "id": "ref",
+      "name": "日常参考",
+      "icon": "📚",
+      "links": [
+        { "id": "google", "name": "Google", "url": "https://www.google.com", "desc": "检索" },
+        { "id": "translate", "name": "Google 翻译", "url": "https://translate.google.com", "desc": "英日对照" },
+        { "id": "wikipedia", "name": "Wikipedia", "url": "https://zh.wikipedia.org", "desc": "背景资料" },
+        { "id": "x", "name": "X", "url": "https://x.com", "desc": "动态" }
+      ]
+    }
+  ]
+}

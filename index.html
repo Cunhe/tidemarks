@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>潮迹 TideMarks</title>
+  <meta name="description" content="部署在 Cloudflare Pages 上的海风书签起始页">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;600&family=Noto+Sans+SC:wght@400;600&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+  <div class="wave"></div>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="logo" src="./favicon.svg" alt="">
+        <div>
+          <h1 id="title">潮迹 TideMarks</h1>
+          <p id="subtitle">海风起处，书签成岸</p>
+        </div>
+      </div>
+      <div class="clock-wrap">
+        <div class="clock" id="clock">--:--</div>
+        <div class="date" id="date"></div>
+      </div>
+    </header>
+
+    <div class="search-row">
+      <div class="search">
+        <span class="icon">⌕</span>
+        <input id="q" type="search" placeholder="搜索书签，或按 Enter 用 Google 检索 · 快捷键 /" autocomplete="off">
+      </div>
+      <div class="actions">
+        <button class="btn" id="themeBtn" type="button">主题</button>
+        <button class="btn" id="editBtn" type="button">编辑</button>
+        <button class="btn" id="addCatBtn" type="button">+ 分类</button>
+        <button class="btn" id="exportBtn" type="button">导出</button>
+        <button class="btn" id="importBtn" type="button">导入</button>
+        <button class="btn" id="resetBtn" type="button">重置</button>
+        <button class="btn gold" id="cloudPull" type="button">云拉取</button>
+        <button class="btn gold" id="cloudPush" type="button">云推送</button>
+        <input id="importFile" type="file" accept="application/json" hidden>
+      </div>
+    </div>
+
+    <div class="cats" id="cats"></div>
+    <footer>TideMarks · 可直接部署到 Cloudflare Pages · 本地优先，KV 可选</footer>
+  </main>
+
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h3 id="modalTitle">书签</h3>
+      <div class="field">
+        <label for="fName">名称</label>
+        <input id="fName" type="text" placeholder="Suno">
+      </div>
+      <div class="field">
+        <label for="fUrl">网址</label>
+        <input id="fUrl" type="url" placeholder="https://">
+      </div>
+      <div class="field">
+        <label for="fDesc">备注</label>
+        <textarea id="fDesc" placeholder="一句话说明"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="modalCancel" type="button">取消</button>
+        <button class="btn gold" id="modalSave" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>
