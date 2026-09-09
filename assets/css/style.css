@@ -17,7 +17,6 @@
   --font-sans: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
 }
-
 [data-theme="light"] {
   --bg-0: #eef6f4;
   --bg-1: #e3efe9;
@@ -34,7 +33,6 @@
   --gold-2: #7c5c18;
   --shadow: 0 16px 40px rgba(22, 50, 58, 0.1);
 }
-
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -109,7 +107,11 @@ body.editing .edit-tools { display: flex; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--bg-2); border: 1px solid var(--line-strong); color: var(--text); padding: 10px 16px; border-radius: 999px; pointer-events: none; transition: .25s ease; z-index: 30; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-footer { margin-top: 28px; color: var(--faint); font-size: 12px; text-align: center; letter-spacing: 0.06em; }
+footer { margin-top: 28px; color: var(--faint); font-size: 12px; text-align: center; letter-spacing: 0.06em; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--gold); }
+footer .gh { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; color: var(--muted); }
+footer .gh:hover { border-color: var(--line-strong); color: var(--text); }
 @media (max-width: 720px) {
   .topbar { flex-direction: column; }
   .clock-wrap { text-align: left; }
