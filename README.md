@@ -4,9 +4,9 @@
 
 - 演示站点：https://tidemarks.aged-union-0107.workers.dev
 - 仓库：https://github.com/Cunhe/tidemarks
-- 站点：https://000666.best
 
-海风玻璃拟态界面。零构建，`npx wrangler deploy` 即可上线。
+
+玻璃拟态界面。零构建，`npx wrangler deploy` 即可上线。
 
 ## 功能
 
