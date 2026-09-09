@@ -1,16 +1,23 @@
-# 潮迹 TideMarks
+# TideMarks — Cloudflare Workers 个人书签起始页
 
-部署在 **Cloudflare Workers** 上的个人书签起始页。本地优先，KV 可选。
+演示：[tidemarks.aged-union-0107.workers.dev](https://tidemarks.aged-union-0107.workers.dev)　·　仓库：[Cunhe/tidemarks](https://github.com/Cunhe/tidemarks)　·　[000666.best](https://000666.best)
 
-- 演示站点：https://tidemarks.aged-union-0107.workers.dev
-- 仓库：https://github.com/Cunhe/tidemarks
+> TideMarks 是一个轻量、无厂商绑定的个人云书签起始页。
+>
+> 它不是一个我要去运营的服务。
+> 它只是一个我自己想用起来舒服的东西。
+>
+> 它不要求用户注册账号，也不依赖特定浏览器或设备。
+> 书签默认保存在本地，需要时通过 Cloudflare KV 在不同设备之间同步。
+>
+> 没有后台，没有管理负担。
+> 打开网页，就能使用。
 
+本地优先。Cloudflare Workers 承载页面。KV 只在你需要跨设备时出现。
 
-玻璃拟态界面。零构建，`npx wrangler deploy` 即可上线。
+## 它是什么
 
-## 功能
-
-- 分类卡片书签、实时时钟、本地搜索
+- 分类卡片、实时时钟、本地搜索
 - 输入框按 Enter：唯一匹配则直达，否则 Google 搜索
 - 快捷键 `/` 聚焦搜索
 - 亮 / 暗主题
@@ -18,19 +25,11 @@
 - JSON 导入导出、一键恢复默认
 - 可选云拉取 / 云推送（Worker `/api/bookmarks` + KV）
 
-## 演示
-
-线上预览：
-
-**https://tidemarks.aged-union-0107.workers.dev**
-
-页脚文案：`TideMarks · Cloudflare Workers · 000666.best`
+零构建。`npx wrangler deploy` 即可上线。
 
 ## 书签模板 `data/bookmarks.json`
 
-默认书签、导出文件、导入文件，都用同一套 JSON 结构。仓库里没有 `bookmark.js`，个性化请改 `data/bookmarks.json`，或在页面上导出 / 导入。
-
-导入时必须符合下面模板，缺少 `categories` 会被拒绝。
+默认书签、导出、导入、KV 同步，都用同一套 JSON。没有 `bookmark.js`。个性化请改这个文件，或在页面上导出后再导入。导入必须带 `categories`。
 
 ```json
 {
@@ -56,8 +55,6 @@
 }
 ```
 
-字段说明：
-
 | 字段 | 位置 | 必填 | 说明 |
 |---|---|---|---|
 | `version` | 根 | 建议 | 模板版本，目前为 `1` |
@@ -65,7 +62,7 @@
 | `subtitle` | 根 | 否 | 页眉副标题 |
 | `updatedAt` | 根 | 否 | ISO 时间，保存时会自动刷新 |
 | `categories` | 根 | 是 | 分类数组，导入时必须有 |
-| `categories[].id` | 分类 | 是 | 稳定 id，例如 `create` |
+| `categories[].id` | 分类 | 是 | 稳定 id |
 | `categories[].name` | 分类 | 是 | 分类名 |
 | `categories[].icon` | 分类 | 否 | emoji 或短符号 |
 | `categories[].links` | 分类 | 是 | 该书签列表 |
@@ -74,51 +71,24 @@
 | `links[].url` | 书签 | 是 | 完整网址，建议带 `https://` |
 | `links[].desc` | 书签 | 否 | 一行备注 |
 
-自行个性化两种方式：
+两种改法：
 
-1. 直接改仓库里的 `data/bookmarks.json`，再部署。这是站点默认书签。
-2. 打开页面 → 导出 JSON → 按模板改 → 再导入。导入文件也必须是上面这套结构。
+1. 直接改 `data/bookmarks.json`，再部署。
+2. 页面导出 → 按模板改 → 再导入。
 
-最小可导入示例：
+本机若已有 localStorage 数据，改仓库文件不会自动覆盖。需要覆盖时点「重置」。
 
-```json
-{
-  "version": 1,
-  "title": "我的起始页",
-  "subtitle": "自定义书签",
-  "categories": [
-    {
-      "id": "daily",
-      "name": "常用",
-      "icon": "✦",
-      "links": [
-        {
-          "id": "mail",
-          "name": "邮箱",
-          "url": "https://mail.google.com",
-          "desc": "收信"
-        }
-      ]
-    }
-  ]
-}
-```
+## 部署到 Cloudflare Workers
 
-注意：页面会先读浏览器 localStorage。若本机已有旧数据，改仓库 JSON 不会自动覆盖。需要覆盖时点页面上的「重置」。
+1. Settings → Deploy command = `npx wrangler deploy`，Build command 留空。
+2. `wrangler.toml` 的 `name` 必须和 Worker 项目名一致（默认 `tidemarks`）。
+3. 绑定 Git 后 push `main`，或点 Retry deployment。
 
-## 最快部署（Workers Git）
+成功后访问 `https://tidemarks.<账号>.workers.dev`。
 
-控制台若执行 `npx wrangler deploy`：
+演示站：https://tidemarks.aged-union-0107.workers.dev
 
-1. Cloudflare 项目 Settings：Deploy command = `npx wrangler deploy`，Build command 留空。
-2. `wrangler.toml` 的 `name` 必须和 Cloudflare 项目名一致（默认 `tidemarks`）。
-3. 重试部署或再 push 一次 `main`。
-
-成功后访问 `https://tidemarks.<账号>.workers.dev`。本仓库演示站：
-
-https://tidemarks.aged-union-0107.workers.dev
-
-## 本地预览
+本地预览：
 
 ```bash
 python3 -m http.server 8788
@@ -128,10 +98,10 @@ npx wrangler dev
 
 ## 可选：KV 云同步
 
-Worker Settings → Bindings 添加 KV，变量名必须是 `BOOKMARKS`；Variables 添加 `ADMIN_TOKEN`。保存后重新部署一次。
+Worker Settings → Bindings 添加 KV，变量名必须是 `BOOKMARKS`。  
+Variables 添加 `ADMIN_TOKEN`。保存后重新部署一次。
 
-- 云拉取：读 KV 里的同一份 JSON 模板
-- 云推送：把当前浏览器里的书签按同一模板写入 KV
+未绑定 KV 时，页面仍可单独使用。
 
 ## 许可
 
