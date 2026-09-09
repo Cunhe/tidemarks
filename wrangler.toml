@@ -1,0 +1,10 @@
+name = "tidemarks"
+compatibility_date = "2026-09-09"
+pages_build_output_dir = "."
+
+# 本地预览时可选：npx wrangler pages dev
+# 生产环境请在 Cloudflare Dashboard 绑定同名 KV 与环境变量
+
+# [[kv_namespaces]]
+# binding = "BOOKMARKS"
+# id = "替换为你的 KV namespace id"
