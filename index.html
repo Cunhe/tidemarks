@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>潮迹 TideMarks</title>
-  <meta name="description" content="部署在 Cloudflare Pages 上的海风书签起始页">
+  <meta name="description" content="部署在 Cloudflare 上的海风书签起始页">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,9 +45,10 @@
         <input id="importFile" type="file" accept="application/json" hidden>
       </div>
     </div>
+    <div class="status-row" id="cloudStatus">正在检测云端接口…</div>
 
     <div class="cats" id="cats"></div>
-    <footer>TideMarks · 可直接部署到 Cloudflare Pages · 本地优先，KV 可选</footer>
+    <footer>TideMarks · Cloudflare Workers · 本地优先，KV 可选</footer>
   </main>
 
   <div class="modal-bg" id="modalBg">
@@ -68,6 +69,20 @@
       <div class="modal-actions">
         <button class="btn" id="modalCancel" type="button">取消</button>
         <button class="btn gold" id="modalSave" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-bg" id="tokenBg">
+    <div class="modal">
+      <h3>云推送到 KV</h3>
+      <p class="hint">填写 Worker 环境变量 <code>ADMIN_TOKEN</code> 的同一串值。只存在当前浏览器会话里。</p>
+      <div class="field">
+        <label for="fToken">ADMIN_TOKEN</label>
+        <input id="fToken" type="password" placeholder="和 Cloudflare Variables 里一致" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="tokenCancel" type="button">取消</button>
+        <button class="btn gold" id="tokenSave" type="button">确认推送</button>
       </div>
     </div>
   </div>
