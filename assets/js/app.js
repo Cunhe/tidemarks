@@ -124,11 +124,15 @@ function filteredCategories() {
 }
 
 function escapeHtml(s) {
-  return String(s || "")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+  const map = {
+    "&": "&" + "amp;",
+    "<": "&" + "lt;",
+    ">": "&" + "gt;",
+    '"': "&" + "quot;",
+  };
+  return String(s || "").replace(/[&<>"]/g, function (ch) {
+    return map[ch];
+  });
 }
 
 function cardHtml(link) {
@@ -168,43 +172,37 @@ function render() {
   $("#subtitle").textContent = STATE.data.subtitle || "海风起处，书签成岸";
   document.body.classList.toggle("editing", STATE.editing);
   $("#editBtn").textContent = STATE.editing ? "完成" : "编辑";
-
   const root = $("#cats");
   const cats = filteredCategories();
   if (!cats.length) {
     root.innerHTML = '<div class="empty">没有匹配的书签。试试别的词，或按 Enter 用搜索引擎查找。</div>';
     return;
   }
-
-  root.innerHTML = cats
-    .map(function (cat) {
-      const links = cat.links.map(cardHtml).join("");
-      return (
-        '<section class="cat" data-cat="' +
-        escapeHtml(cat.id) +
-        '"><div class="cat-head"><div class="cat-title"><span>' +
-        (cat.icon || "•") +
-        "</span>" +
-        escapeHtml(cat.name) +
-        '</div><div class="count">' +
-        cat.links.length +
-        ' 个站点<span class="edit-tools">' +
-        '<button class="btn tiny" data-act="add-link" data-cat="' +
-        escapeHtml(cat.id) +
-        '">+ 书签</button>' +
-        '<button class="btn tiny" data-act="rename-cat" data-cat="' +
-        escapeHtml(cat.id) +
-        '">改名</button>' +
-        '<button class="btn tiny" data-act="del-cat" data-cat="' +
-        escapeHtml(cat.id) +
-        '">删分类</button>' +
-        "</span></div></div><div class=\"grid\">" +
-        links +
-        "</div></section>"
-      );
-    })
-    .join("");
-
+  root.innerHTML = cats.map(function (cat) {
+    const links = cat.links.map(cardHtml).join("");
+    return (
+      '<section class="cat" data-cat="' +
+      escapeHtml(cat.id) +
+      '"><div class="cat-head"><div class="cat-title"><span>' +
+      (cat.icon || "\u2022") +
+      "</span>" +
+      escapeHtml(cat.name) +
+      '</div><div class="count">' +
+      cat.links.length +
+      ' 个站点<span class="edit-tools">' +
+      '<button class="btn tiny" data-act="add-link" data-cat="' +
+      escapeHtml(cat.id) +
+      '">+ 书签</button>' +
+      '<button class="btn tiny" data-act="rename-cat" data-cat="' +
+      escapeHtml(cat.id) +
+      '">改名</button>' +
+      '<button class="btn tiny" data-act="del-cat" data-cat="' +
+      escapeHtml(cat.id) +
+      '">删分类</button></span></div></div><div class="grid">' +
+      links +
+      "</div></section>"
+    );
+  }).join("");
   if (STATE.editing) {
     $$(".card").forEach(function (card) {
       card.addEventListener("click", function (e) {
@@ -229,7 +227,6 @@ function findLink(id) {
 function bind() {
   if (STATE.bound) return;
   STATE.bound = true;
-
   $("#q").addEventListener("input", function (e) {
     STATE.query = e.target.value;
     render();
@@ -246,26 +243,22 @@ function bind() {
     }
     if (q) window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank", "noopener");
   });
-
   $("#themeBtn").addEventListener("click", function () {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
     localStorage.setItem(THEME_KEY, next);
   });
-
   $("#editBtn").addEventListener("click", function () {
     STATE.editing = !STATE.editing;
     render();
   });
-
   $("#addCatBtn").addEventListener("click", function () {
     const name = prompt("新分类名称", "未命名");
     if (!name) return;
-    STATE.data.categories.push({ id: uid("cat"), name: name, icon: "✦", links: [] });
+    STATE.data.categories.push({ id: uid("cat"), name: name, icon: "\u2726", links: [] });
     persist();
     render();
   });
-
   $("#exportBtn").addEventListener("click", function () {
     const blob = new Blob([JSON.stringify(STATE.data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -275,7 +268,6 @@ function bind() {
     URL.revokeObjectURL(a.href);
     toast("已导出 JSON");
   });
-
   $("#importBtn").addEventListener("click", function () {
     $("#importFile").click();
   });
@@ -284,7 +276,7 @@ function bind() {
     if (!file) return;
     try {
       const json = JSON.parse(await file.text());
-      if (!json.categories) throw new Error("格式不对");
+      if (!json.categories) throw new Error("bad");
       STATE.data = json;
       persist();
       render();
@@ -294,7 +286,6 @@ function bind() {
     }
     e.target.value = "";
   });
-
   $("#resetBtn").addEventListener("click", async function () {
     if (!confirm("恢复为仓库默认书签？当前本地修改会覆盖。")) return;
     STATE.data = await loadSeed();
@@ -302,7 +293,6 @@ function bind() {
     render();
     toast("已恢复默认");
   });
-
   $("#cloudPull").addEventListener("click", pullCloud);
   $("#cloudPush").addEventListener("click", openTokenModal);
   $("#tokenCancel").addEventListener("click", closeTokenModal);
@@ -310,7 +300,6 @@ function bind() {
   $("#fToken").addEventListener("keydown", function (e) {
     if (e.key === "Enter") confirmPush();
   });
-
   $("#cats").addEventListener("click", function (e) {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
@@ -328,7 +317,7 @@ function bind() {
       render();
     }
     if (act === "del-cat") {
-      if (!confirm("删除分类「" + cat.name + "」？")) return;
+      if (!confirm("删除分类\u300c" + cat.name + "\u300d？")) return;
       STATE.data.categories = STATE.data.categories.filter(function (c) {
         return c.id !== cat.id;
       });
@@ -336,7 +325,6 @@ function bind() {
       render();
     }
   });
-
   $("#modalCancel").addEventListener("click", closeModal);
   $("#modalSave").addEventListener("click", saveModal);
   document.addEventListener("keydown", function (e) {
