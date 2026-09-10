@@ -16,6 +16,16 @@ function authorized(request, env) {
   return Boolean(env.ADMIN_TOKEN) && token === String(env.ADMIN_TOKEN);
 }
 
+function requireAdmin(request, env) {
+  if (!env.ADMIN_TOKEN) {
+    return json({ error: "未配置 ADMIN_TOKEN。Worker Settings → Variables 增加 ADMIN_TOKEN" }, 501);
+  }
+  if (!authorized(request, env)) {
+    return json({ error: "ADMIN_TOKEN 不正确" }, 401);
+  }
+  return null;
+}
+
 async function handleHealth(env) {
   let hasData = false;
   if (env.BOOKMARKS) {
@@ -34,6 +44,11 @@ async function handleBookmarks(request, env) {
     return json({ error: "未绑定 KV。Worker Settings → Bindings 添加 KV，变量名必须是 BOOKMARKS" }, 501);
   }
 
+  if (request.method === "GET" || request.method === "PUT") {
+    const denied = requireAdmin(request, env);
+    if (denied) return denied;
+  }
+
   if (request.method === "GET") {
     const raw = await env.BOOKMARKS.get(KEY);
     if (!raw) return json({ error: "云端还是空的，请先点「云推送」", empty: true }, 404);
@@ -46,12 +61,6 @@ async function handleBookmarks(request, env) {
   }
 
   if (request.method === "PUT") {
-    if (!env.ADMIN_TOKEN) {
-      return json({ error: "未配置 ADMIN_TOKEN。Worker Settings → Variables 增加 ADMIN_TOKEN 后再推送" }, 501);
-    }
-    if (!authorized(request, env)) {
-      return json({ error: "ADMIN_TOKEN 不正确" }, 401);
-    }
     let body;
     try {
       body = await request.json();

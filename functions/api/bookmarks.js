@@ -1,26 +1,37 @@
 const KEY = "tidemarks:data";
 
-function json(data, status = 200, extra = {}) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
-      ...extra,
     },
   });
 }
 
 function authorized(request, env) {
   const header = request.headers.get("authorization") || "";
-  const token = header.replace(/^Bearer\s+/i, "");
-  return Boolean(env.ADMIN_TOKEN) && token === env.ADMIN_TOKEN;
+  const token = header.replace(/^Bearer\s+/i, "").trim();
+  return Boolean(env.ADMIN_TOKEN) && token === String(env.ADMIN_TOKEN);
 }
 
-export async function onRequestGet({ env }) {
-  if (!env.BOOKMARKS) {
-    return json({ error: "未绑定 KV：请在 Pages 项目中绑定 BOOKMARKS" }, 501);
+function requireAdmin(request, env) {
+  if (!env.ADMIN_TOKEN) {
+    return json({ error: "未配置环境变量 ADMIN_TOKEN" }, 501);
   }
+  if (!authorized(request, env)) {
+    return json({ error: "ADMIN_TOKEN 不正确" }, 401);
+  }
+  return null;
+}
+
+export async function onRequestGet({ request, env }) {
+  if (!env.BOOKMARKS) {
+    return json({ error: "未绑定 KV" }, 501);
+  }
+  const denied = requireAdmin(request, env);
+  if (denied) return denied;
   const raw = await env.BOOKMARKS.get(KEY);
   if (!raw) return json({ error: "云端还没有数据，先点「云推送」" }, 404);
   return new Response(raw, {
@@ -30,14 +41,10 @@ export async function onRequestGet({ env }) {
 
 export async function onRequestPut({ request, env }) {
   if (!env.BOOKMARKS) {
-    return json({ error: "未绑定 KV：请在 Pages 项目中绑定 BOOKMARKS" }, 501);
+    return json({ error: "未绑定 KV" }, 501);
   }
-  if (!env.ADMIN_TOKEN) {
-    return json({ error: "未配置环境变量 ADMIN_TOKEN" }, 501);
-  }
-  if (!authorized(request, env)) {
-    return json({ error: "未授权" }, 401);
-  }
+  const denied = requireAdmin(request, env);
+  if (denied) return denied;
   let body;
   try {
     body = await request.json();
