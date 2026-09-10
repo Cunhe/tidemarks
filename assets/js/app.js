@@ -1,5 +1,5 @@
 const STORAGE_KEY = "tidemarks.v1";
-const THEME_KEY = "tidemarks.theme";
+const THEME_KEY = "tidemarks.theme.v2";
 const TOKEN_KEY = "tidemarks.token";
 const STATE = {
   data: null,
@@ -81,7 +81,7 @@ async function loadSeed() {
 }
 
 async function boot() {
-  const theme = localStorage.getItem(THEME_KEY) || "dark";
+  const theme = localStorage.getItem(THEME_KEY) || "light";
   document.documentElement.dataset.theme = theme;
   bind();
   tick();
