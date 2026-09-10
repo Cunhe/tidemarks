@@ -293,12 +293,12 @@ function bind() {
     render();
     toast("已恢复默认");
   });
-  $("#cloudPull").addEventListener("click", pullCloud);
-  $("#cloudPush").addEventListener("click", openTokenModal);
+  $("#cloudPull").addEventListener("click", function () { openTokenModal("pull"); });
+  $("#cloudPush").addEventListener("click", function () { openTokenModal("push"); });
   $("#tokenCancel").addEventListener("click", closeTokenModal);
-  $("#tokenSave").addEventListener("click", confirmPush);
+  $("#tokenSave").addEventListener("click", confirmCloud);
   $("#fToken").addEventListener("keydown", function (e) {
-    if (e.key === "Enter") confirmPush();
+    if (e.key === "Enter") confirmCloud();
   });
   $("#cats").addEventListener("click", function (e) {
     const btn = e.target.closest("[data-act]");
@@ -406,7 +406,10 @@ async function pingCloud() {
   }
 }
 
-function openTokenModal() {
+function openTokenModal(action) {
+  STATE.cloudAction = action || "push";
+  var title = document.querySelector("#tokenBg h3");
+  if (title) title.textContent = STATE.cloudAction === "pull" ? "云拉取（需要 ADMIN_TOKEN）" : "云推送到 KV";
   $("#fToken").value = sessionStorage.getItem(TOKEN_KEY) || "";
   $("#tokenBg").classList.add("show");
   $("#fToken").focus();
@@ -416,10 +419,22 @@ function closeTokenModal() {
   $("#tokenBg").classList.remove("show");
 }
 
-async function pullCloud() {
+async function confirmCloud() {
+  const token = $("#fToken").value.trim();
+  if (!token) return toast("请填写 ADMIN_TOKEN");
+  sessionStorage.setItem(TOKEN_KEY, token);
+  closeTokenModal();
+  if (STATE.cloudAction === "pull") return pullCloud(token);
+  return pushCloud(token);
+}
+
+async function pullCloud(token) {
   setStatus("正在从 KV 拉取…");
   try {
-    const res = await fetch("/api/bookmarks", { cache: "no-store" });
+    const res = await fetch("/api/bookmarks", {
+      cache: "no-store",
+      headers: { authorization: "Bearer " + token },
+    });
     if (res.status === 404) {
       const msg = await readApiError(res);
       setStatus(msg, "bad");
@@ -440,11 +455,7 @@ async function pullCloud() {
   }
 }
 
-async function confirmPush() {
-  const token = $("#fToken").value.trim();
-  if (!token) return toast("请填写 ADMIN_TOKEN");
-  sessionStorage.setItem(TOKEN_KEY, token);
-  closeTokenModal();
+async function pushCloud(token) {
   setStatus("正在推送到 KV…");
   try {
     const res = await fetch("/api/bookmarks", {
